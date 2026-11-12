@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { conexion } from "../../lib/supabase";
 import { BotonSalir } from "./boton-salir";
+import { CopilotoVoz } from "./copiloto-voz";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
         <BotonSalir usuarioId={user.id} />
       </div>
       {children}
+      <CopilotoVoz />
     </main>
   );
 }
