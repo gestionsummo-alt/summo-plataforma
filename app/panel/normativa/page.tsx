@@ -53,9 +53,12 @@ export default async function NormativaPage({
 
   return (
     <section style={{ display: "grid", gap: 22 }}>
-      <p>
+      <p style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
         <Link className="access" href={`/panel?institucion=${encodeURIComponent(ctx.institucionId)}`}>
           ← Volver al panel de {ctx.institucionNombre}
+        </Link>
+        <Link className="access" href={`/panel/importar?institucion=${encodeURIComponent(ctx.institucionId)}`} style={{ background: "#d3e7de", fontWeight: "bold" }}>
+          📥 Importar diseño curricular desde PDF / Excel →
         </Link>
       </p>
       <header>
