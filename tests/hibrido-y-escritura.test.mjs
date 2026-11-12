@@ -17,6 +17,7 @@ test("SUMMO 002: calendario jurisdiccional, cupo de licencia, aislamiento y sync
     `);
     await db.exec(await readFile(new URL("../supabase/migrations/001_base.sql", import.meta.url), "utf8"));
     await db.exec(await readFile(new URL("../supabase/migrations/002_calendario_normativa_y_escritura.sql", import.meta.url), "utf8"));
+    await db.exec(await readFile(new URL("../supabase/migrations/003_ram_planes_y_sync_hibrida.sql", import.meta.url), "utf8"));
 
     const instA = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
     const instB = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
@@ -118,6 +119,32 @@ test("SUMMO 002: calendario jurisdiccional, cupo de licencia, aislamiento y sync
       [instA, JSON.stringify([{ cursada_id: cursadaId, peso_falta: 0.5, idempotency_key: key1 }])],
     );
     assert.deepEqual(sync2.rows[0].r, { aplicados: 0, omitidos_idempotentes: 1 });
+
+    // Preceptoría puede leer su nómina de cursadas en Institución A pero jamás en Institución B
+    assert.equal((await db.query("select count(*)::int n from public.cursadas")).rows[0].n, 1);
+    assert.equal((await db.query("select count(*)::int n from public.personas where institucion_id = $1", [instB])).rows[0].n, 0);
+
+    // 3. Secretaría crea un plan nuevo, materia y regla RAM/RAI versionada
+    await db.exec(`select set_config('request.jwt.claim.sub', '${userSecA}', false);`);
+    const nuevoPlan = (await db.query(
+      `select public.crear_plan_institucional($1::uuid, 'Profesorado de Informática', 'PI', 'Res. 100/26', null, 2027::smallint) id`,
+      [instA],
+    )).rows[0].id;
+    const nuevaMat = (await db.query(
+      `select public.crear_materia_institucional($1::uuid, $2::uuid, 'DID-1', 'Didáctica General') id`,
+      [instA, nuevoPlan],
+    )).rows[0].id;
+    const cursada2 = (await db.query(
+      `select public.inscribir_cursada_institucional($1::uuid, $2::uuid, $3::uuid, 2027::smallint, 'B') id`,
+      [instA, matriculaId, nuevaMat],
+    )).rows[0].id;
+    assert.ok(cursada2);
+
+    const reglaId = (await db.query(
+      `select public.registrar_regla_normativa($1::uuid, $2::uuid, '2026-11-01'::date, 'Res. CFE 72/08', 'PROFESORADO', 75, 60, 1, 10, 6, 8, 2, 'ANIOS', true, 0.5) id`,
+      [instA, nuevoPlan],
+    )).rows[0].id;
+    assert.ok(reglaId);
   } finally {
     await db.close();
   }
