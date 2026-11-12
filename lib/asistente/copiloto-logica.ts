@@ -36,9 +36,9 @@ export function procesarConsultaVozHeuristica(
   ) {
     return {
       respuestaVoz:
-        "Te abro el módulo de Asistencia y Preceptoría. Podés marcar presentes y ausentes incluso si no tenés internet en el aula, y se guardará automáticamente.",
+        "¡Dale, che! Te abro el módulo de Asistencias y Preceptoría. Quedate tranqui que podés marcar presentes y ausentes incluso si no tenés internet en el aula, y después se sincroniza solo.",
       accion: { tipo: "NAVEGAR", ruta: `/panel/asistencia${instQuery}` },
-      sugerenciaSiguiente: "¿Querés que veamos la lista de alguna materia en particular?",
+      sugerenciaSiguiente: "¿Querés que busquemos la lista de alguna materia en particular?",
     };
   }
 
@@ -53,9 +53,9 @@ export function procesarConsultaVozHeuristica(
   ) {
     return {
       respuestaVoz:
-        "Te llevo al Asistente de Ingesta Documental. Arrastrá tu archivo Excel o PDF y el sistema extraerá los datos automáticamente para que los revises.",
+        "¡Mirá qué bueno! Te llevo al Importador de Documentos. Arrastrá tu PDF o planilla de Excel ahí y el sistema te extrae los datos al toque para que los revises.",
       accion: { tipo: "NAVEGAR", ruta: `/panel/importar${instQuery}` },
-      sugerenciaSiguiente: "¿Tenés un padrón de estudiantes o un plan de estudio para cargar?",
+      sugerenciaSiguiente: "¿Tenés un padrón de estudiantes o una resolución de plan de estudio?",
     };
   }
 
@@ -69,9 +69,9 @@ export function procesarConsultaVozHeuristica(
   ) {
     return {
       respuestaVoz:
-        "Te llevo al módulo de Mesas y Actas. Ahí podés abrir llamados, verificar correlatividades y confeccionar las actas volantes provisorias o definitivas con código QR.",
+        "Dale, te abro Mesas y Actas. Ahí podés cargar las notas provisionales en el acta volante y, cuando esté todo listo, emitir el acta definitiva con código QR.",
       accion: { tipo: "NAVEGAR", ruta: `/panel/examenes${instQuery}` },
-      sugerenciaSiguiente: "¿Necesitás cargar notas o consultar las actas emitidas?",
+      sugerenciaSiguiente: "¿Querés cargar notas de una mesa o revisar actas anteriores?",
     };
   }
 
@@ -85,7 +85,7 @@ export function procesarConsultaVozHeuristica(
   ) {
     return {
       respuestaVoz:
-        "Te abro Secretaría Académica. En esta sección podés dar de alta carreras, inscribir estudiantes con su DNI y habilitar las cursadas del ciclo lectivo.",
+        "Tranqui, te llevo a Secretaría Académica. Ahí podés anotar al alumno con su número de DNI o habilitarle las materias del ciclo lectivo.",
       accion: { tipo: "NAVEGAR", ruta: `/panel/secretaria${instQuery}` },
       sugerenciaSiguiente: "¿Querés matricular a un estudiante nuevo o habilitar una cursada?",
     };
@@ -102,7 +102,7 @@ export function procesarConsultaVozHeuristica(
   ) {
     return {
       respuestaVoz:
-        "Te llevo al módulo de Normativas y Reglas Académicas. Podés configurar el régimen de correlatividades, la escala de notas y consultar el calendario oficial de tu provincia.",
+        "Ahí te abro Normativas y Reglas Académicas. Podés chequear las correlativas, la escala de notas y el calendario escolar oficial de la provincia.",
       accion: { tipo: "NAVEGAR", ruta: `/panel/normativa${instQuery}` },
       sugerenciaSiguiente: "¿Querés revisar correlatividades o el calendario escolar?",
     };
@@ -116,7 +116,7 @@ export function procesarConsultaVozHeuristica(
   ) {
     return {
       respuestaVoz:
-        "Te abro Planificaciones Docentes. Acá los profesores presentan sus propuestas pedagógicas y el equipo directivo puede revisarlas y aprobarlas.",
+        "Dale, te abro Planificaciones Docentes. Acá los profes cargan sus programas y el equipo directivo los va revisando y aprobando.",
       accion: { tipo: "NAVEGAR", ruta: `/panel/planificaciones${instQuery}` },
       sugerenciaSiguiente: "¿Buscás una planificación para revisar?",
     };
@@ -124,8 +124,8 @@ export function procesarConsultaVozHeuristica(
 
   return {
     respuestaVoz:
-      "Hola, soy tu asistente de SUMMO. Puedo llevarte a cualquier módulo del sistema: Secretaría, Preceptoría, Exámenes, Normativas o Ingesta de documentos. Decime qué trámite necesitás hacer hoy.",
+      "¡Hola! Soy tu asistente de SUMMO. Decime qué trámite necesitás resolver hoy: te puedo llevar a Asistencias, Secretaría, Mesas de Examen, Normativas o al Importador de documentos.",
     accion: { tipo: "NINGUNA" },
-    sugerenciaSiguiente: "Por ejemplo: 'Quiero matricular un estudiante' o 'Necesito tomar asistencia'.",
+    sugerenciaSiguiente: "Por ejemplo: 'Quiero matricular un estudiante' o 'Tengo que tomar asistencia'.",
   };
 }

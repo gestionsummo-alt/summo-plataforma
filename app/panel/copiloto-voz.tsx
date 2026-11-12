@@ -27,6 +27,8 @@ export function CopilotoVoz() {
   const [subtitulo, setSubtitulo] = useState<string | null>(null);
   const [errorSoporte, setErrorSoporte] = useState<string | null>(null);
   const [textoManual, setTextoManual] = useState("");
+  const [vocesDisponibles, setVocesDisponibles] = useState<SpeechSynthesisVoice[]>([]);
+  const [vozSeleccionadaUri, setVozSeleccionadaUri] = useState<string>("");
 
   const recognitionRef = useRef<any>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
@@ -37,6 +39,35 @@ export function CopilotoVoz() {
 
     if ("speechSynthesis" in window) {
       synthRef.current = window.speechSynthesis;
+
+      const cargarVoces = () => {
+        const todas = window.speechSynthesis.getVoices();
+        const enEspanol = todas.filter((v) => v.lang.toLowerCase().startsWith("es"));
+        setVocesDisponibles(enEspanol);
+
+        // 1. Priorizar voces de Argentina (es-AR, Tomás, Mateo, etc.)
+        const argentina = enEspanol.find((v) => {
+          const l = v.lang.toLowerCase();
+          const n = v.name.toLowerCase();
+          return l === "es-ar" || n.includes("argentina") || n.includes("tomas") || n.includes("mateo");
+        });
+
+        // 2. Si no hay argentina, buscar voces latinoamericanas (es-419, Colombia, Uruguay, México, etc.)
+        const latino = enEspanol.find((v) => {
+          const l = v.lang.toLowerCase();
+          const n = v.name.toLowerCase();
+          const esEspana = l === "es-es" || n.includes("spain") || n.includes("helena") || n.includes("laura") || n.includes("pablo");
+          return !esEspana;
+        });
+
+        const preferida = argentina || latino || enEspanol[0];
+        if (preferida) {
+          setVozSeleccionadaUri((prev) => prev || preferida.voiceURI);
+        }
+      };
+
+      cargarVoces();
+      window.speechSynthesis.onvoiceschanged = cargarVoces;
     }
 
     const SpeechRecognition =
@@ -109,15 +140,29 @@ export function CopilotoVoz() {
 
     const utterance = new SpeechSynthesisUtterance(texto);
     utterance.lang = "es-AR";
-    utterance.rate = 0.95; // ritmo pausado para mayor claridad
-    utterance.pitch = 1.0;
+    utterance.rate = 0.90; // Pausa cálida litoraleña
+    utterance.pitch = 0.96; // Tono más cálido y humano
 
-    // Buscar voz en español rioplatense o latinoamericano
     const voces = synthRef.current.getVoices();
-    const vozElegida =
-      voces.find((v) => v.lang === "es-AR") ||
-      voces.find((v) => v.lang.startsWith("es-419")) ||
-      voces.find((v) => v.lang.startsWith("es"));
+    let vozElegida = voces.find((v) => v.voiceURI === vozSeleccionadaUri);
+
+    if (!vozElegida) {
+      // Priorizar voces argentinas
+      vozElegida =
+        voces.find((v) => {
+          const l = v.lang.toLowerCase();
+          const n = v.name.toLowerCase();
+          return l === "es-ar" || n.includes("argentina") || n.includes("tomas") || n.includes("mateo");
+        }) ||
+        voces.find((v) => {
+          const l = v.lang.toLowerCase();
+          const n = v.name.toLowerCase();
+          const esEspana = l === "es-es" || n.includes("spain") || n.includes("helena") || n.includes("laura");
+          return l.startsWith("es") && !esEspana;
+        }) ||
+        voces.find((v) => v.lang.toLowerCase().startsWith("es"));
+    }
+
     if (vozElegida) {
       utterance.voice = vozElegida;
     }
@@ -330,6 +375,32 @@ export function CopilotoVoz() {
               Enviar
             </button>
           </form>
+
+          {/* Selector de voz regional */}
+          {vocesDisponibles.length > 0 && (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6, fontSize: "0.78rem", color: "#476157" }}>
+              <span>Acento / Voz:</span>
+              <select
+                value={vozSeleccionadaUri}
+                onChange={(e) => setVozSeleccionadaUri(e.target.value)}
+                style={{
+                  fontSize: "0.75rem",
+                  padding: "3px 6px",
+                  borderRadius: 6,
+                  border: "1px solid #c2d5cd",
+                  maxWidth: 240,
+                  background: "#ffffff",
+                  color: "#1c2b26",
+                }}
+              >
+                {vocesDisponibles.map((v) => (
+                  <option key={v.voiceURI} value={v.voiceURI}>
+                    {v.name.replace(/Microsoft |Google |Online \(Natural\) - /g, "")} ({v.lang})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Botones de acción rápida y silenciar */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.8rem" }}>
