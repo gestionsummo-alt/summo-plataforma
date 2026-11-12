@@ -199,6 +199,16 @@ export function ImportadorWizard({
         <button disabled={analizando || !archivo}>
           {analizando ? "Extrayendo y validando inconsistencias…" : "Analizar documento y generar vista previa →"}
         </button>
+        <div style={{ display: "flex", gap: 14, flexWrap: "wrap", fontSize: "0.85rem", marginTop: 10, color: "#476157" }}>
+          <span>¿Querés probar con archivos modelo de prueba?</span>
+          <a href="/ejemplos/padron_estudiantes_ejemplo.xlsx" download style={{ color: "#06594f", textDecoration: "underline", fontWeight: 600 }}>
+            📥 Descargar Padrón de Estudiantes (.xlsx)
+          </a>
+          <span>·</span>
+          <a href="/ejemplos/plan_estudio_ejemplo.xlsx" download style={{ color: "#06594f", textDecoration: "underline", fontWeight: 600 }}>
+            📥 Descargar Plan y Correlatividades (.xlsx)
+          </a>
+        </div>
       </form>
 
       {estadoFinal && (
