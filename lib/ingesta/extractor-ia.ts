@@ -203,17 +203,35 @@ export async function extraerDocumentoConIA(params: {
           },
         ];
 
-  const response = await ai.models.generateContent({
-    model: "gemini-3.8-flash",
-    contents,
-    config: {
-      temperature: 0,
-      responseMimeType: "application/json",
-      responseJsonSchema: schema,
-    },
-  });
+  let rawText = "";
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3.8-flash",
+      contents,
+      config: {
+        temperature: 0,
+        responseMimeType: "application/json",
+        responseJsonSchema: schema,
+      },
+    });
+    rawText = response.text ?? "";
+  } catch (err: any) {
+    const errorMsg = err?.message || String(err);
+    console.error("Error en extracción multimodal Gemini:", errorMsg);
+    let detalle = "No se pudo procesar el documento con el motor de IA.";
+    if (errorMsg.includes("API key not valid") || errorMsg.includes("API_KEY_INVALID")) {
+      detalle =
+        "La clave GEMINI_API_KEY no es válida o contiene puntos suspensivos (...). Verificá haber copiado la clave completa desde Google AI Studio (aistudio.google.com/api-keys).";
+    } else if (errorMsg.includes("quota") || errorMsg.includes("RESOURCE_EXHAUSTED")) {
+      detalle = "Límite de cuota gratuita alcanzado temporalmente. Aguardá 60 segundos antes de reintentar.";
+    }
+    return {
+      ok: false,
+      mensaje: detalle,
+      alertas: [{ nivel: "error", mensaje: detalle }],
+    };
+  }
 
-  const rawText = response.text;
   if (!rawText) {
     return {
       ok: false,

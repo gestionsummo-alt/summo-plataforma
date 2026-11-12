@@ -49,10 +49,20 @@ export function ImportadorWizard({
       fd.set("archivo", archivo);
 
       const res = await fetch("/api/importar/analizar", { method: "POST", body: fd });
-      const data = (await res.json()) as ResultadoAnalisisDocumento & { error?: string };
+      let data: any = null;
+      try {
+        data = await res.json();
+      } catch {
+        const txt = await res.text().catch(() => "");
+        setEstadoFinal({
+          ok: false,
+          mensaje: txt || `Error de servidor (${res.status}). Verificá la conexión y la configuración de API keys.`,
+        });
+        return;
+      }
 
       if (!res.ok) {
-        setEstadoFinal({ ok: false, mensaje: data.error ?? "Error al analizar el archivo." });
+        setEstadoFinal({ ok: false, mensaje: data?.error ?? data?.mensaje ?? "Error al analizar el archivo." });
         return;
       }
 
@@ -63,8 +73,11 @@ export function ImportadorWizard({
       if (!data.ok) {
         setEstadoFinal({ ok: false, mensaje: data.mensaje });
       }
-    } catch {
-      setEstadoFinal({ ok: false, mensaje: "Error de red al subir y analizar el documento." });
+    } catch (err: any) {
+      setEstadoFinal({
+        ok: false,
+        mensaje: `Error de red al subir el documento: ${err?.message || "conexión interrumpida"}.`,
+      });
     } finally {
       setAnalizando(false);
     }

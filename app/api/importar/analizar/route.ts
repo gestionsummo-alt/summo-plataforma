@@ -120,22 +120,33 @@ export async function POST(req: NextRequest) {
         ? "image/jpeg"
         : file.type || "application/octet-stream";
 
-  const iaRes = await extraerDocumentoConIA({
-    buffer,
-    mimeType: mime,
-    tipo,
-    esWordDocx: esWord,
-  });
+  try {
+    const iaRes = await extraerDocumentoConIA({
+      buffer,
+      mimeType: mime,
+      tipo,
+      esWordDocx: esWord,
+    });
 
-  return NextResponse.json({
-    ok: iaRes.ok,
-    archivoNombre: file.name,
-    archivoSha256: sha256,
-    tipo,
-    carril: "IA_MULTIMODAL",
-    mensaje: iaRes.mensaje,
-    alertas: [...alertasExtra, ...iaRes.alertas],
-    datosPlan: iaRes.datosPlan,
-    datosPadron: iaRes.datosPadron,
-  });
+    return NextResponse.json({
+      ok: iaRes.ok,
+      archivoNombre: file.name,
+      archivoSha256: sha256,
+      tipo,
+      carril: "IA_MULTIMODAL",
+      mensaje: iaRes.mensaje,
+      alertas: [...alertasExtra, ...iaRes.alertas],
+      datosPlan: iaRes.datosPlan,
+      datosPadron: iaRes.datosPadron,
+    });
+  } catch (error: any) {
+    console.error("Fallo inesperado en extractor:", error);
+    return NextResponse.json(
+      {
+        ok: false,
+        error: `Error al procesar el archivo: ${error?.message || "Fallo inesperado del motor de análisis"}`,
+      },
+      { status: 500 }
+    );
+  }
 }
