@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { obtenerContextoInstitucional } from "../../../lib/institucion-activa";
-import { FormularioCalendario, FormularioReglaRam } from "./normativa-forms";
+import { FormularioCalendario, FormularioCorrelativa, FormularioReglaRam } from "./normativa-forms";
 
 export default async function NormativaPage({
   searchParams,
@@ -10,7 +10,7 @@ export default async function NormativaPage({
   const { institucion } = await searchParams;
   const ctx = await obtenerContextoInstitucional(institucion, "normativa");
 
-  const [ciclosRes, turnosRes, planesRes, reglasRes] = await Promise.all([
+  const [ciclosRes, turnosRes, planesRes, reglasRes, materiasRes, corrRes] = await Promise.all([
     ctx.db
       .from("calendarios_ciclos")
       .select("ciclo,normativa_fuente,cursado_inicio,cursado_fin,receso_inicio,receso_fin,cierre_administrativo")
@@ -32,9 +32,20 @@ export default async function NormativaPage({
       .eq("institucion_id", ctx.institucionId)
       .order("vigente_desde", { ascending: false })
       .order("version", { ascending: false }),
+    ctx.db
+      .from("materias")
+      .select("id,codigo,nombre")
+      .eq("institucion_id", ctx.institucionId)
+      .order("nombre"),
+    ctx.db
+      .from("correlativas")
+      .select("id,materia_id,requisito_id,instancia,condicion")
+      .eq("institucion_id", ctx.institucionId),
   ]);
 
   const planes = (planesRes.data ?? []) as Array<{ id: string; carrera: string; codigo: string }>;
+  const materias = (materiasRes.data ?? []) as Array<{ id: string; codigo: string; nombre: string }>;
+  const correlativas = (corrRes.data ?? []) as Array<{ id: string; materia_id: string; requisito_id: string; instancia: string; condicion: string }>;
   const ciclos = ciclosRes.data ?? [];
   const turnos = turnosRes.data ?? [];
   const reglas = reglasRes.data ?? [];
@@ -101,10 +112,31 @@ export default async function NormativaPage({
         )}
       </article>
 
+      <article>
+        <h3>Correlatividades vigentes ({correlativas.length})</h3>
+        {correlativas.length === 0 ? (
+          <p>Todavía no hay correlativas configuradas.</p>
+        ) : (
+          <ul>
+            {correlativas.map((c) => {
+              const obj = materias.find((m) => m.id === c.materia_id);
+              const req = materias.find((m) => m.id === c.requisito_id);
+              return (
+                <li key={c.id}>
+                  Para <strong>{c.instancia}</strong> <strong>{obj?.nombre ?? "—"}</strong> requiere{" "}
+                  <strong>{req?.nombre ?? "—"}</strong> en condición <strong>{c.condicion}</strong>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </article>
+
       {puedeEscribir && (
         <>
           <FormularioCalendario institucionId={ctx.institucionId} />
           <FormularioReglaRam institucionId={ctx.institucionId} planes={planes} />
+          <FormularioCorrelativa institucionId={ctx.institucionId} materias={materias} />
         </>
       )}
     </section>

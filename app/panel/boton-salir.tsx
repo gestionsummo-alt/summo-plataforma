@@ -7,6 +7,7 @@ export function BotonSalir({ usuarioId }: { usuarioId: string }) {
   return (
     <form
       action={salir}
+      style={{ background: "transparent", border: 0, padding: 0 }}
       onSubmit={() => {
         void limpiarDatosUsuarioLocal(usuarioId).catch(() => {});
       }}

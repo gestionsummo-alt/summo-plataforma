@@ -7,6 +7,8 @@ const rutasModulo: Partial<Record<Modulo, string>> = {
   normativa: "/panel/normativa",
   secretaria: "/panel/secretaria",
   asistencia: "/panel/asistencia",
+  planificaciones: "/panel/planificaciones",
+  examenes: "/panel/examenes",
 };
 
 export default async function Panel({

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { guardarCalendarioOficial, guardarReglaRam } from "../actions";
+import { agregarCorrelativa, guardarCalendarioOficial, guardarReglaRam } from "../actions";
 
 export function FormularioCalendario({ institucionId }: { institucionId: string }) {
   const router = useRouter();
@@ -195,6 +195,72 @@ export function FormularioReglaRam({
       <input type="hidden" name="escala_max" value="10" />
       <button disabled={busy || planes.length === 0}>{busy ? "Guardando…" : "Registrar versión RAM/RAI"}</button>
       {planes.length === 0 && <small>Primero creá un plan de estudio en el módulo de Secretaría.</small>}
+      {msg && <p role="status">{msg}</p>}
+    </form>
+  );
+}
+
+export function FormularioCorrelativa({
+  institucionId,
+  materias,
+}: {
+  institucionId: string;
+  materias: Array<{ id: string; codigo: string; nombre: string }>;
+}) {
+  const router = useRouter();
+  const [busy, start] = useTransition();
+  const [msg, setMsg] = useState("");
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget);
+        start(async () => {
+          const r = await agregarCorrelativa(fd);
+          setMsg(r.mensaje);
+          if (r.ok) router.refresh();
+        });
+      }}
+    >
+      <h3>Definir correlatividad (Cursar / Rendir)</h3>
+      <input type="hidden" name="institucion" value={institucionId} />
+      <div className="grid">
+        <label>
+          Materia objetivo
+          <select name="materia_id" required defaultValue="">
+            <option value="" disabled>Elegí materia…</option>
+            {materias.map((m) => (
+              <option key={m.id} value={m.id}>{m.nombre} ({m.codigo})</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Materia requisito
+          <select name="requisito_id" required defaultValue="">
+            <option value="" disabled>Elegí requisito…</option>
+            {materias.map((m) => (
+              <option key={m.id} value={m.id}>{m.nombre} ({m.codigo})</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Instancia
+          <select name="instancia" defaultValue="RENDIR">
+            <option value="CURSAR">Para cursar</option>
+            <option value="RENDIR">Para rendir examen final</option>
+          </select>
+        </label>
+        <label>
+          Condición requerida
+          <select name="condicion" defaultValue="APROBADA">
+            <option value="REGULAR">Regularizada</option>
+            <option value="APROBADA">Aprobada (final / promoción)</option>
+          </select>
+        </label>
+      </div>
+      <button disabled={busy || materias.length < 2}>Agregar correlativa</button>
+      {materias.length < 2 && <small>Necesitás al menos 2 materias en Secretaría para vincular correlativas.</small>}
       {msg && <p role="status">{msg}</p>}
     </form>
   );
