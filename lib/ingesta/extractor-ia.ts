@@ -204,21 +204,37 @@ export async function extraerDocumentoConIA(params: {
         ];
 
   let rawText = "";
-  try {
-    const response = await ai.models.generateContent({
-      model: "gemini-3.8-flash",
-      contents,
-      config: {
-        temperature: 0,
-        responseMimeType: "application/json",
-        responseJsonSchema: schema,
-      },
-    });
-    rawText = response.text ?? "";
-  } catch (err: any) {
-    const errorMsg = err?.message || String(err);
+  const modelosAProbar = ["gemini-2.5-flash", "gemini-3.8-flash", "gemini-2.0-flash"];
+  let ultimoError: any = null;
+
+  for (const modelo of modelosAProbar) {
+    try {
+      const response = await ai.models.generateContent({
+        model: modelo,
+        contents,
+        config: {
+          temperature: 0,
+          responseMimeType: "application/json",
+          responseJsonSchema: schema,
+        },
+      });
+      rawText = response.text ?? "";
+      if (rawText) break;
+    } catch (err: any) {
+      ultimoError = err;
+      const msg = err?.message || String(err);
+      console.warn(`Fallo al intentar modelo ${modelo}:`, msg);
+      // Si el error es de clave inválida, no reintentar otros modelos
+      if (msg.includes("API key not valid") || msg.includes("API_KEY_INVALID")) {
+        break;
+      }
+    }
+  }
+
+  if (!rawText && ultimoError) {
+    const errorMsg = ultimoError?.message || String(ultimoError);
     console.error("Error en extracción multimodal Gemini:", errorMsg);
-    let detalle = "No se pudo procesar el documento con el motor de IA.";
+    let detalle = `No se pudo procesar el documento con el motor de IA (${errorMsg.slice(0, 160)}).`;
     if (errorMsg.includes("API key not valid") || errorMsg.includes("API_KEY_INVALID")) {
       detalle =
         "La clave GEMINI_API_KEY no es válida o contiene puntos suspensivos (...). Verificá haber copiado la clave completa desde Google AI Studio (aistudio.google.com/api-keys).";
@@ -268,6 +284,22 @@ export async function extraerDocumentoConIA(params: {
         cohorte: e.cohorte ? Number(e.cohorte) : undefined,
       }))
     : [];
+
+  if (estudiantes.length === 0) {
+    return {
+      ok: false,
+      mensaje:
+        "No se detectaron estudiantes con DNI en este documento. Si estás subiendo una resolución o diseño curricular (materias), cambiá el desplegable superior a 'Plan de estudio, materias y correlativas'.",
+      alertas: [
+        {
+          nivel: "advertencia",
+          mensaje:
+            "No se encontraron datos de estudiantes en este archivo. ¿Es un diseño curricular o resolución de carrera? En ese caso elegí 'Plan de estudio'.",
+        },
+      ],
+      datosPadron: [],
+    };
+  }
 
   return {
     ok: true,

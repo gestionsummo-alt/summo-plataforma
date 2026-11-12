@@ -79,18 +79,32 @@ Si el usuario pregunta algo general, guialo con calidez litoraleña y ofrecé ll
         required: ["respuestaVoz", "accion"],
       };
 
-      const res = await ai.models.generateContent({
-        model: "gemini-3.8-flash",
-        contents: [
-          { role: "user", parts: [{ text: `${promptSistema}\n\nInstitución actual ID: ${institucionId ?? "ninguna"}\nMensaje del usuario: "${mensaje}"` }] },
-        ],
-        config: {
-          responseMimeType: "application/json",
-          responseJsonSchema: schema,
-        },
-      });
+      let texto = "";
+      const modelos = ["gemini-2.5-flash", "gemini-3.8-flash", "gemini-2.0-flash"];
 
-      const texto = res.text?.trim() ?? "{}";
+      for (const modelo of modelos) {
+        try {
+          const res = await ai.models.generateContent({
+            model: modelo,
+            contents: [
+              { role: "user", parts: [{ text: `${promptSistema}\n\nInstitución actual ID: ${institucionId ?? "ninguna"}\nMensaje del usuario: "${mensaje}"` }] },
+            ],
+            config: {
+              responseMimeType: "application/json",
+              responseJsonSchema: schema,
+            },
+          });
+          texto = res.text?.trim() ?? "";
+          if (texto) break;
+        } catch (errModelo) {
+          console.warn(`Voz falló con modelo ${modelo}, intentando siguiente...`);
+        }
+      }
+
+      if (!texto) {
+        throw new Error("Ningún modelo generó respuesta");
+      }
+
       const parsed = JSON.parse(texto) as RespuestaCopiloto;
 
       // Asegurar parámetro institucion en la ruta de navegación si aplica
