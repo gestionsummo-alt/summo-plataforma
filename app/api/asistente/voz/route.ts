@@ -80,25 +80,21 @@ Si el usuario pregunta algo general, guialo con calidez litoraleña y ofrecé ll
       };
 
       let texto = "";
-      const modelos = ["gemini-2.5-flash", "gemini-3.8-flash", "gemini-2.0-flash"];
-
-      for (const modelo of modelos) {
-        try {
-          const res = await ai.models.generateContent({
-            model: modelo,
-            contents: [
-              { role: "user", parts: [{ text: `${promptSistema}\n\nInstitución actual ID: ${institucionId ?? "ninguna"}\nMensaje del usuario: "${mensaje}"` }] },
-            ],
-            config: {
-              responseMimeType: "application/json",
-              responseJsonSchema: schema,
-            },
-          });
-          texto = res.text?.trim() ?? "";
-          if (texto) break;
-        } catch (errModelo) {
-          console.warn(`Voz falló con modelo ${modelo}, intentando siguiente...`);
-        }
+      try {
+        const res = await ai.models.generateContent({
+          model: "gemini-3.8-flash",
+          contents: [
+            `${promptSistema}\n\nInstitución actual ID: ${institucionId ?? "ninguna"}\nMensaje del usuario: "${mensaje}"`,
+          ],
+          config: {
+            responseMimeType: "application/json",
+            responseSchema: schema,
+          },
+        });
+        texto = res.text?.trim() ?? "";
+      } catch (errModelo) {
+        console.warn("Fallo con modelo gemini-3.8-flash en voz:", errModelo);
+        throw errModelo;
       }
 
       if (!texto) {

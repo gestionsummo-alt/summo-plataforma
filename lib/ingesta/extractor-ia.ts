@@ -190,51 +190,35 @@ export async function extraerDocumentoConIA(params: {
       ? "Analizá este documento oficial de Educación Superior de Argentina (resolución o diseño curricular). Extraé con total exactitud la denominación de la carrera, el número de resolución jurisdiccional y nacional si consta, el año de cohorte inicial, TODAS las unidades curriculares (materias, talleres, seminarios, prácticas) y TODAS las correlatividades (para CURSAR o RENDIR en condición REGULAR o APROBADA). No inventes materias que no aparezcan en el documento."
       : "Analizá este listado o planilla institucional y extraé cada estudiante con su número de documento (solo dígitos) y su apellido y nombre completo. No inventes ni modifiques documentos.";
 
-  const contents =
+  const contents: any[] =
     textoWord !== null
-      ? [{ text: `${prompt}\n\nCONTENIDO DEL DOCUMENTO WORD:\n${textoWord.slice(0, 120000)}` }]
+      ? [`${prompt}\n\nCONTENIDO DEL DOCUMENTO WORD:\n${textoWord.slice(0, 120000)}`]
       : [
-          { text: prompt },
           {
             inlineData: {
               mimeType: params.mimeType || "application/pdf",
               data: params.buffer.toString("base64"),
             },
           },
+          prompt,
         ];
 
   let rawText = "";
-  const modelosAProbar = ["gemini-2.5-flash", "gemini-3.8-flash", "gemini-2.0-flash"];
-  let ultimoError: any = null;
-
-  for (const modelo of modelosAProbar) {
-    try {
-      const response = await ai.models.generateContent({
-        model: modelo,
-        contents,
-        config: {
-          temperature: 0,
-          responseMimeType: "application/json",
-          responseJsonSchema: schema,
-        },
-      });
-      rawText = response.text ?? "";
-      if (rawText) break;
-    } catch (err: any) {
-      ultimoError = err;
-      const msg = err?.message || String(err);
-      console.warn(`Fallo al intentar modelo ${modelo}:`, msg);
-      // Si el error es de clave inválida, no reintentar otros modelos
-      if (msg.includes("API key not valid") || msg.includes("API_KEY_INVALID")) {
-        break;
-      }
-    }
-  }
-
-  if (!rawText && ultimoError) {
-    const errorMsg = ultimoError?.message || String(ultimoError);
-    console.error("Error en extracción multimodal Gemini:", errorMsg);
-    let detalle = `No se pudo procesar el documento con el motor de IA (${errorMsg.slice(0, 160)}).`;
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3.8-flash",
+      contents,
+      config: {
+        temperature: 0,
+        responseMimeType: "application/json",
+        responseSchema: schema,
+      },
+    });
+    rawText = response.text ?? "";
+  } catch (err: any) {
+    const errorMsg = err?.message || String(err);
+    console.error("Error en extracción multimodal Gemini 3.8 Flash:", errorMsg);
+    let detalle = `No se pudo procesar el documento con el motor de IA: ${errorMsg.slice(0, 160)}`;
     if (errorMsg.includes("API key not valid") || errorMsg.includes("API_KEY_INVALID")) {
       detalle =
         "La clave GEMINI_API_KEY no es válida o contiene puntos suspensivos (...). Verificá haber copiado la clave completa desde Google AI Studio (aistudio.google.com/api-keys).";
