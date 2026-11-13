@@ -48,7 +48,20 @@ export function ImportadorWizard({
       fd.set("tipo", tipo);
       fd.set("archivo", archivo);
 
-      const res = await fetch("/api/importar/analizar", { method: "POST", body: fd });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
+      let res: Response;
+      try {
+        res = await fetch("/api/importar/analizar", {
+          method: "POST",
+          body: fd,
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
+
       let data: any = null;
       try {
         data = await res.json();
@@ -56,7 +69,7 @@ export function ImportadorWizard({
         const txt = await res.text().catch(() => "");
         setEstadoFinal({
           ok: false,
-          mensaje: txt || `Error de servidor (${res.status}). Verificá la conexión y la configuración de API keys.`,
+          mensaje: txt || `Error de servidor (${res.status}). Verificá la cuota de la API o usá formato Excel.`,
         });
         return;
       }
@@ -74,10 +87,18 @@ export function ImportadorWizard({
         setEstadoFinal({ ok: false, mensaje: data.mensaje });
       }
     } catch (err: any) {
-      setEstadoFinal({
-        ok: false,
-        mensaje: `Error de red al subir el documento: ${err?.message || "conexión interrumpida"}.`,
-      });
+      if (err?.name === "AbortError") {
+        setEstadoFinal({
+          ok: false,
+          mensaje:
+            "El análisis demoró más de 30 segundos. Esto ocurre cuando la API gratuita de Gemini alcanza su límite de solicitudes por día (20 RPD) o el PDF es muy extenso. Te recomendamos probar con una planilla Excel (.xlsx) que se procesa al instante sin cuotas.",
+        });
+      } else {
+        setEstadoFinal({
+          ok: false,
+          mensaje: `Error al subir el documento: ${err?.message || "conexión interrumpida"}.`,
+        });
+      }
     } finally {
       setAnalizando(false);
     }
